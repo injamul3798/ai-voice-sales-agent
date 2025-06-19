@@ -1,11 +1,8 @@
-"""
-AI Voice Sales Agent - FastAPI Application
-Core implementation for AI Voice Sales Agent with voice conversation capabilities.
-"""
+ 
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from typing import Optional, Dict, List, Any
 import logging
@@ -15,7 +12,7 @@ import sys
 import os
 import base64
 
-# Add the current directory to Python path for imports
+ 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from pydantic import BaseModel
@@ -283,6 +280,33 @@ async def transcribe_voice(call_id: str, audio_file: UploadFile = File(...)):
         logger.error(f"Error processing voice input: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/voice/test")
+async def voice_test(audio_file: UploadFile = File(...)):
+    """Test endpoint for voice input: transcribes and responds to uploaded audio."""
+    try:
+        audio_data = await audio_file.read()
+        if not audio_data:
+            return JSONResponse(status_code=400, content={"error": "No audio data provided"})
+        # Transcribe audio
+        transcription = stt_service.process_audio_file(audio_data)
+        if not transcription:
+            return JSONResponse(status_code=400, content={"error": "Could not transcribe audio"})
+        # Generate a simple response (echo or use LLM if desired)
+        response_text = f"You said: {transcription}"
+        # Optionally, generate TTS audio for the response
+        audio_bytes = await tts_service.synthesize_speech(response_text)
+        audio_base64 = base64.b64encode(audio_bytes).decode() if audio_bytes else None
+        # Optionally, save audio and provide a URL (not implemented here)
+        return {
+            "transcription": transcription,
+            "response": response_text,
+            "audio_base64": audio_base64,
+            "audio_url": None  # You can implement file saving and return a URL if needed
+        }
+    except Exception as e:
+        logger.error(f"Error in /voice/test: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 @app.get("/conversation/{call_id}", response_model=ConversationResponse)
 async def get_conversation(call_id: str):
     """Get conversation details and history."""
@@ -378,18 +402,10 @@ if __name__ == "__main__":
     print("⏰ Duration: 12 weeks")
     print("\n🌐 Web Interface: http://localhost:8000/static/test_voice.html")
     print("📚 API Documentation: http://localhost:8000/docs")
-    print("🔍 Health Check: http://localhost:8000/health")
-    print("\n🎤 Voice Features:")
-    print("   - Text-to-Speech: GET /voice/synthesize?text=your_text")
-    print("   - Speech-to-Text: POST /voice/transcribe/{call_id}")
-    print("   - Real-time voice conversation available")
-    print("\n🧪 Testing:")
-    # print("   - Voice Test Interface: http://localhost:8000/test")
-    print("   - TTS Test: http://localhost:8000/voice/synthesize?text=Hello%20World")
-    
+ 
     uvicorn.run(
         app,
         host="0.0.0.0",
         port=8000,
         log_level="info"
-    ) 
+    )
