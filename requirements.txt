@@ -1,21 +1,27 @@
 # Core FastAPI dependencies
-fastapi==0.104.1
-uvicorn==0.24.0
-python-dotenv==1.0.0
-pydantic==2.5.2
-python-multipart==0.0.6
+fastapi
+uvicorn
+python-dotenv
+pydantic
+python-multipart
 
 # Voice processing
-gTTS==2.4.0
-openai-whisper==20231117
+gTTS
+openai-whisper
+torch
+transformers
+soundfile
 
 # HTTP requests
-requests==2.31.0
-aiofiles==23.2.1
+requests
+aiofiles
 
 # Data processing
-pandas==2.3.0
-numpy==1.26.2
+pandas
+numpy
 
 # Additional utilities
-python-dateutil==2.8.2
+python-dateutil
+
+# LLM orchestration
+langchain

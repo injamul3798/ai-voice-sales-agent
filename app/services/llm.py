@@ -1,8 +1,4 @@
-"""
-LLM Service for AI Voice Sales Agent
-Simplified implementation for conversation handling.
-"""
-
+ 
 import logging
 from typing import List, Dict, Any, Optional
 import random
@@ -11,6 +7,13 @@ try:
     HF_AVAILABLE = True
 except ImportError:
     HF_AVAILABLE = False
+
+try:
+    from langchain.llms import HuggingFacePipeline
+    from langchain.prompts import PromptTemplate
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +44,8 @@ class LLMService:
             ]
         }
         self.hf_pipeline = None
+        self.langchain_llm = None
+        self.langchain_prompt = None
         if HF_AVAILABLE:
             try:
                 self.hf_pipeline = pipeline(
@@ -54,6 +59,17 @@ class LLMService:
                 self.hf_pipeline = None
         else:
             logger.warning("Transformers not available, using fallback logic.")
+        if LANGCHAIN_AVAILABLE and HF_AVAILABLE:
+            try:
+                self.langchain_llm = HuggingFacePipeline.from_pipeline(self.hf_pipeline)
+                self.langchain_prompt = PromptTemplate(
+                    input_variables=["stage", "history"],
+                    template=SALES_SYSTEM_PROMPT
+                )
+                logger.info("LangChain LLM initialized with HuggingFace pipeline.")
+            except Exception as e:
+                logger.error(f"Could not initialize LangChain LLM: {e}")
+                self.langchain_llm = None
 
     def _get_stage(self, history: List[Dict], customer_info: Dict[str, Any]) -> str:
         # Simple heuristic for stage tracking
@@ -74,14 +90,12 @@ class LLMService:
     def generate_introduction(self, customer_name: str) -> str:
         return f"Hello {customer_name}, I'm your AI sales agent from TechEd Academy. I'm excited to tell you about our AI Mastery Bootcamp. Are you interested in learning more?"
 
-    def generate_response(self, message: str, history: List[Dict], customer_info: Dict[str, Any]) -> (str, bool):
+    def generate_response(self, message: str, history: List[Dict], customer_info: Dict[str, Any]) -> tuple[str, bool]:
         stage = self._get_stage(history, customer_info)
-        # Build conversation history string
         history_str = "\n".join([
             f"Agent: {m['content']}" if m["role"] == "agent" else f"Customer: {m['content']}" for m in history
         ] + [f"Customer: {message}"])
         prompt = SALES_SYSTEM_PROMPT.format(stage=stage, history=history_str)
-        # Check for enrollment intent at closing
         enrolled_keywords = ["yes", "enroll", "register", "sign up", "send link", "email", "okay"]
         should_end_call = False
         if stage == "closing":
@@ -94,6 +108,15 @@ class LLMService:
             customer_info['call_ended'] = True
             should_end_call = True
             return ("Thank you! I've sent you the enrollment link by email. Looking forward to seeing you in the Bootcamp!", should_end_call)
+        # LangChain path
+        if self.langchain_llm and self.langchain_prompt:
+            try:
+                lc_prompt = self.langchain_prompt.format(stage=stage, history=history_str)
+                reply = self.langchain_llm(lc_prompt)
+                return (reply.strip(), should_end_call)
+            except Exception as e:
+                logger.error(f"Error with LangChain LLM: {e}")
+        # HuggingFace fallback
         if self.hf_pipeline:
             try:
                 conv = Conversation(prompt)
@@ -219,4 +242,4 @@ class LLMService:
                 return "qualification"
         
         # Default to introduction
-        return "introduction" 
+        return "introduction"

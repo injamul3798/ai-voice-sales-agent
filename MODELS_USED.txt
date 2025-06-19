@@ -1,14 +1,14 @@
 AI Voice Sales Agent - Models Used
 =================================
 
-1. HuggingFace DialoGPT-medium
+1. HuggingFace DialoGPT-medium (via LangChain)
    - Purpose: Large Language Model (LLM) for generating dynamic, context-aware agent responses
    - Source: https://huggingface.co/microsoft/DialoGPT-medium
-   - Used in: app/services/llm.py (LLMService)
+   - Used in: app/services/llm.py (LLMService, orchestrated by LangChain)
 
-2. HuggingFace SpeechT5 (microsoft/speecht5_tts)
+2. gTTS (Google Text-to-Speech)
    - Purpose: Text-to-Speech (TTS) for converting agent replies to natural-sounding voice
-   - Source: https://huggingface.co/microsoft/speecht5_tts
+   - Source: https://pypi.org/project/gTTS/
    - Used in: app/services/tts.py (TTSService)
 
 3. OpenAI Whisper (open-source model)
@@ -16,4 +16,9 @@ AI Voice Sales Agent - Models Used
    - Source: https://github.com/openai/whisper
    - Used in: app/services/stt.py (STTService)
 
-All models are free and open-source. No paid API keys are required. Models are loaded and used in-memory for real-time conversation. 
+4. LangChain
+   - Purpose: LLM orchestration and prompt management
+   - Source: https://github.com/langchain-ai/langchain
+   - Used in: app/services/llm.py (LLMService)
+
+All models and frameworks are free and open-source. No paid API keys are required. Models are loaded and used in-memory for real-time conversation.

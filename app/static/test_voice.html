@@ -57,47 +57,6 @@
             cursor: not-allowed;
         }
 
-        .record-btn {
-            background-color: #dc3545;
-        }
-
-        .record-btn.recording {
-            background-color: #28a745;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        .result {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            border-left: 4px solid #007bff;
-        }
-
-        .error {
-            border-left-color: #dc3545;
-            background-color: #f8d7da;
-        }
-
-        .success {
-            border-left-color: #28a745;
-            background-color: #d4edda;
-        }
-
         input[type="text"] {
             width: 100%;
             padding: 10px;
@@ -135,59 +94,12 @@
             background-color: #f3e5f5;
             border-left: 4px solid #9c27b0;
         }
-
-        .voice-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 0;
-        }
-
-        .status-indicator {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-ready {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .status-recording {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <h1>🎤 AI Voice Sales Agent - Voice Test</h1>
-
-        <div class="test-section">
-            <h3>📝 Text-to-Speech Test</h3>
-            <input type="text" id="ttsText" placeholder="Enter text to convert to speech..."
-                value="Hello! Welcome to our AI Mastery Bootcamp. This is a test of the text-to-speech system.">
-            <button onclick="testTTS()">🔊 Generate Speech</button>
-            <div id="ttsResult"></div>
-        </div>
-
-        <div class="test-section">
-            <h3>🎧 Speech-to-Text Test</h3>
-            <p>Record or upload an audio file to test speech recognition:</p>
-
-            <div class="voice-controls">
-                <button id="recordBtn" class="record-btn" onclick="toggleRecording()">🎤 Start Recording</button>
-                <span id="statusIndicator" class="status-indicator status-ready">Ready</span>
-                <span id="recordingTime">00:00</span>
-            </div>
-
-            <input type="file" id="audioFile" accept="audio/*">
-            <button onclick="testSTT()">🎤 Transcribe Audio</button>
-            <div id="sttResult"></div>
-        </div>
 
         <div class="test-section">
             <h3>💬 Voice Conversation Test</h3>
@@ -225,12 +137,6 @@
                 <p style="text-align: center; color: #666;">Start a conversation to see messages here...</p>
             </div>
         </div>
-
-        <div class="test-section">
-            <h3>🏥 Health Check</h3>
-            <button onclick="checkHealth()">🔍 Check API Health</button>
-            <div id="healthResult"></div>
-        </div>
     </div>
 
     <script>
@@ -240,6 +146,7 @@
         let recordingInterval = null;
         let recordingStartTime = null;
         let conversationHistory = []; // Local conversation history
+        let isRecording = false;
 
         // Initialize voice recording
         async function initializeRecording() {
@@ -251,10 +158,52 @@
                     audioChunks.push(event.data);
                 };
 
-                mediaRecorder.onstop = () => {
+                mediaRecorder.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    processVoiceRecording(audioBlob);
                     audioChunks = [];
+
+                    // Send audioBlob to backend as a voice message
+                    const resultDiv = document.getElementById('conversationBox');
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'message agent-message';
+                    loadingDiv.innerHTML = '<em>🤖 Agent is processing your voice message...</em>';
+                    resultDiv.appendChild(loadingDiv);
+                    resultDiv.scrollTop = resultDiv.scrollHeight;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('audio_file', audioBlob, 'voice_message.wav');
+                        const response = await fetch(`/voice/test`, {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            resultDiv.removeChild(loadingDiv);
+                            let audioHtml = '';
+                            if (data.audio_url) {
+                                audioHtml = `<audio controls><source src="${data.audio_url}" type="audio/mpeg">Your browser does not support the audio element.</audio>`;
+                            }
+                            const agentDiv = document.createElement('div');
+                            agentDiv.className = 'message agent-message';
+                            agentDiv.innerHTML = `<strong>🤖 Agent:</strong> ${data.response || ''} ${audioHtml}`;
+                            resultDiv.appendChild(agentDiv);
+                            resultDiv.scrollTop = resultDiv.scrollHeight;
+                        } else {
+                            resultDiv.removeChild(loadingDiv);
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'result error';
+                            errorDiv.innerHTML = `❌ Error: ${response.status}`;
+                            resultDiv.appendChild(errorDiv);
+                        }
+                    } catch (error) {
+                        resultDiv.removeChild(loadingDiv);
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'result error';
+                        errorDiv.innerHTML = `❌ Error: ${error.message}`;
+                        resultDiv.appendChild(errorDiv);
+                    }
                 };
 
                 console.log('Voice recording initialized');
@@ -344,90 +293,6 @@
                     document.getElementById('statusIndicator').className = 'status-indicator status-ready';
                     document.getElementById('recordingTime').textContent = '00:00';
 
-                } else {
-                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status}</div>`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
-            }
-        }
-
-        async function testTTS() {
-            const text = document.getElementById('ttsText').value;
-            const resultDiv = document.getElementById('ttsResult');
-
-            if (!text) {
-                resultDiv.innerHTML = '<div class="result error">Please enter some text</div>';
-                return;
-            }
-
-            resultDiv.innerHTML = '<div class="result">Generating speech...</div>';
-
-            try {
-                const response = await fetch(`/voice/test-tts?text=${encodeURIComponent(text)}`);
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const audioUrl = URL.createObjectURL(blob);
-
-                    resultDiv.innerHTML = `
-                        <div class="result success">
-                            <p>✅ Speech generated successfully!</p>
-                            <audio controls>
-                                <source src="${audioUrl}" type="audio/mpeg">
-                                Your browser does not support the audio element.
-                            </audio>
-                        </div>
-                    `;
-                } else {
-                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status}</div>`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
-            }
-        }
-
-        async function testSTT() {
-            const fileInput = document.getElementById('audioFile');
-            const resultDiv = document.getElementById('sttResult');
-
-            if (!fileInput.files[0]) {
-                resultDiv.innerHTML = '<div class="result error">Please select an audio file</div>';
-                return;
-            }
-
-            resultDiv.innerHTML = '<div class="result">Processing audio...</div>';
-
-            try {
-                const formData = new FormData();
-                formData.append('audio_file', fileInput.files[0]);
-
-                const response = await fetch('/voice/test', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-
-                    let audioHtml = '';
-                    if (data.audio_url) {
-                        audioHtml = `
-                            <p><strong>Response Audio:</strong></p>
-                            <audio controls>
-                                <source src="${data.audio_url}" type="audio/mpeg">
-                                Your browser does not support the audio element.
-                            </audio>
-                        `;
-                    }
-
-                    resultDiv.innerHTML = `
-                        <div class="result success">
-                            <p><strong>Transcription:</strong> ${data.transcription}</p>
-                            <p><strong>Response:</strong> ${data.response}</p>
-                            ${audioHtml}
-                        </div>
-                    `;
                 } else {
                     resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status}</div>`;
                 }
@@ -783,16 +648,22 @@ Message Value: "${messageInput.value}"`);
                 alert('Please start a conversation first');
                 return;
             }
-
             if (!mediaRecorder) {
                 await initializeRecording();
             }
-
-            // Start recording automatically
-            if (mediaRecorder.state === 'inactive') {
-                toggleRecording();
+            const recordBtn = document.getElementById('sendVoiceBtn');
+            if (!isRecording) {
+                // Start recording
+                mediaRecorder.start();
+                isRecording = true;
+                recordBtn.textContent = '⏹️ Stop Recording';
+                recordBtn.classList.add('recording');
             } else {
-                alert('Please stop the current recording first');
+                // Stop recording and send
+                mediaRecorder.stop();
+                isRecording = false;
+                recordBtn.textContent = '🎤 Send Voice';
+                recordBtn.classList.remove('recording');
             }
         }
 

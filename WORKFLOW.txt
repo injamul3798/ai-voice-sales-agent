@@ -10,12 +10,12 @@ AI Voice Sales Agent - Workflow
 7. The frontend sends the message to POST /respond/{call_id}.
 8. The backend:
    - Updates the conversation history
-   - Uses the LLM (DialoGPT-medium) to generate a dynamic, context-aware reply
-   - Converts the reply to speech using HuggingFace SpeechT5 (TTS)
+   - Uses the LLM (via LangChain + HuggingFace DialoGPT-medium) to generate a dynamic, context-aware reply
+   - Converts the reply to speech using gTTS (Google Text-to-Speech)
    - Returns the reply text and voice (base64 audio)
 9. The frontend displays the agent's reply and plays the voice.
 10. Steps 6-9 repeat, following the sales flow (introduction, qualification, pitch, objection handling, closing).
 11. When the user agrees to enroll or requests the link, the agent thanks them and ends the call.
 12. The frontend disables input and shows a "Call ended" message.
 
-All audio is handled in-memory (no files saved). All responses are dynamic and context-aware. 
+ 
