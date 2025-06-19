@@ -1,0 +1,21 @@
+AI Voice Sales Agent - Workflow
+=============================
+
+1. User opens the web interface (test_voice.html) in their browser.
+2. User starts a new call by entering their name and phone number.
+3. The frontend sends a POST /start-call request to the FastAPI backend.
+4. The backend creates a new conversation and responds with the agent's greeting (text + voice as base64 audio).
+5. The frontend displays the agent's message and plays the voice response.
+6. User replies by typing a message (or optionally sending voice input).
+7. The frontend sends the message to POST /respond/{call_id}.
+8. The backend:
+   - Updates the conversation history
+   - Uses the LLM (DialoGPT-medium) to generate a dynamic, context-aware reply
+   - Converts the reply to speech using HuggingFace SpeechT5 (TTS)
+   - Returns the reply text and voice (base64 audio)
+9. The frontend displays the agent's reply and plays the voice.
+10. Steps 6-9 repeat, following the sales flow (introduction, qualification, pitch, objection handling, closing).
+11. When the user agrees to enroll or requests the link, the agent thanks them and ends the call.
+12. The frontend disables input and shows a "Call ended" message.
+
+All audio is handled in-memory (no files saved). All responses are dynamic and context-aware. 

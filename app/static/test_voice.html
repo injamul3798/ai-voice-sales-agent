@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Sales Agent - Voice Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .test-section h3 {
+            color: #555;
+            margin-top: 0;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .record-btn {
+            background-color: #dc3545;
+        }
+
+        .record-btn.recording {
+            background-color: #28a745;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .conversation-box {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .agent-message {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .customer-message {
+            background-color: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .status-indicator {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-ready {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-recording {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎤 AI Voice Sales Agent - Voice Test</h1>
+
+        <div class="test-section">
+            <h3>📝 Text-to-Speech Test</h3>
+            <input type="text" id="ttsText" placeholder="Enter text to convert to speech..."
+                value="Hello! Welcome to our AI Mastery Bootcamp. This is a test of the text-to-speech system.">
+            <button onclick="testTTS()">🔊 Generate Speech</button>
+            <div id="ttsResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎧 Speech-to-Text Test</h3>
+            <p>Record or upload an audio file to test speech recognition:</p>
+
+            <div class="voice-controls">
+                <button id="recordBtn" class="record-btn" onclick="toggleRecording()">🎤 Start Recording</button>
+                <span id="statusIndicator" class="status-indicator status-ready">Ready</span>
+                <span id="recordingTime">00:00</span>
+            </div>
+
+            <input type="file" id="audioFile" accept="audio/*">
+            <button onclick="testSTT()">🎤 Transcribe Audio</button>
+            <div id="sttResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>💬 Voice Conversation Test</h3>
+
+            <div
+                style="margin-bottom: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #dee2e6;">
+                <h4 style="margin-top: 0; color: #495057;">📋 Customer Information</h4>
+                <label for="customerName" style="display: block; margin-bottom: 5px; font-weight: bold;">Customer
+                    Name:</label>
+                <input type="text" id="customerName" placeholder="Enter your name..." value="Test User"
+                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
+
+                <label for="phoneNumber" style="display: block; margin-bottom: 5px; font-weight: bold;">Phone
+                    Number:</label>
+                <input type="text" id="phoneNumber" placeholder="Enter your phone number..." value="+1-555-0123"
+                    style="width: 100%; padding: 8px; margin-bottom: 10px;">
+
+                <div id="customerInfoDisplay"
+                    style="display: none; padding: 10px; background-color: #d4edda; border-radius: 3px; margin-top: 10px;">
+                    <strong>✅ Active Customer:</strong> <span id="activeCustomerName"></span> (<span
+                        id="activeCustomerPhone"></span>)
+                </div>
+            </div>
+
+            <button onclick="startConversation()">📞 Start New Call</button>
+            <button onclick="sendTextMessage()" id="sendTextBtn" disabled>📤 Send Text</button>
+            <button onclick="sendVoiceMessage()" id="sendVoiceBtn" disabled>🎤 Send Voice</button>
+            <button onclick="forceEnableInputs()" style="background-color: #28a745;">🔧 Force Enable Inputs</button>
+            <button onclick="checkCurrentState()" style="background-color: #ffc107; color: black;">🔍 Check
+                State</button>
+
+            <input type="text" id="messageText" placeholder="Type your message..." disabled>
+
+            <div class="conversation-box" id="conversationBox">
+                <p style="text-align: center; color: #666;">Start a conversation to see messages here...</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🏥 Health Check</h3>
+            <button onclick="checkHealth()">🔍 Check API Health</button>
+            <div id="healthResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentCallId = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingInterval = null;
+        let recordingStartTime = null;
+        let conversationHistory = []; // Local conversation history
+
+        // Initialize voice recording
+        async function initializeRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    processVoiceRecording(audioBlob);
+                    audioChunks = [];
+                };
+
+                console.log('Voice recording initialized');
+            } catch (error) {
+                console.error('Error initializing recording:', error);
+                alert('Could not access microphone. Please check permissions.');
+            }
+        }
+
+        function toggleRecording() {
+            const recordBtn = document.getElementById('recordBtn');
+            const statusIndicator = document.getElementById('statusIndicator');
+
+            if (!mediaRecorder) {
+                initializeRecording();
+                return;
+            }
+
+            if (mediaRecorder.state === 'inactive') {
+                // Start recording
+                mediaRecorder.start();
+                recordBtn.textContent = '⏹️ Stop Recording';
+                recordBtn.classList.add('recording');
+                statusIndicator.textContent = 'Recording...';
+                statusIndicator.className = 'status-indicator status-recording';
+
+                // Start timer
+                recordingStartTime = Date.now();
+                recordingInterval = setInterval(updateRecordingTime, 1000);
+
+            } else {
+                // Stop recording
+                mediaRecorder.stop();
+                recordBtn.textContent = '🎤 Start Recording';
+                recordBtn.classList.remove('recording');
+                statusIndicator.textContent = 'Processing...';
+
+                // Stop timer
+                clearInterval(recordingInterval);
+            }
+        }
+
+        function updateRecordingTime() {
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('recordingTime').textContent = `${minutes}:${seconds}`;
+        }
+
+        async function processVoiceRecording(audioBlob) {
+            const resultDiv = document.getElementById('sttResult');
+            resultDiv.innerHTML = '<div class="result">Processing voice recording...</div>';
+
+            try {
+                const formData = new FormData();
+                formData.append('audio_file', audioBlob, 'recording.wav');
+
+                const response = await fetch('/voice/test', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    let audioHtml = '';
+                    if (data.audio_url) {
+                        audioHtml = `
+                            <p><strong>Response Audio:</strong></p>
+                            <audio controls>
+                                <source src="${data.audio_url}" type="audio/mpeg">
+                                Your browser does not support the audio element.
+                            </audio>
+                        `;
+                    }
+
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <p><strong>Transcription:</strong> ${data.transcription}</p>
+                            <p><strong>Response:</strong> ${data.response}</p>
+                            ${audioHtml}
+                        </div>
+                    `;
+
+                    // Update status
+                    document.getElementById('statusIndicator').textContent = 'Ready';
+                    document.getElementById('statusIndicator').className = 'status-indicator status-ready';
+                    document.getElementById('recordingTime').textContent = '00:00';
+
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testTTS() {
+            const text = document.getElementById('ttsText').value;
+            const resultDiv = document.getElementById('ttsResult');
+
+            if (!text) {
+                resultDiv.innerHTML = '<div class="result error">Please enter some text</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="result">Generating speech...</div>';
+
+            try {
+                const response = await fetch(`/voice/test-tts?text=${encodeURIComponent(text)}`);
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <p>✅ Speech generated successfully!</p>
+                            <audio controls>
+                                <source src="${audioUrl}" type="audio/mpeg">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testSTT() {
+            const fileInput = document.getElementById('audioFile');
+            const resultDiv = document.getElementById('sttResult');
+
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<div class="result error">Please select an audio file</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="result">Processing audio...</div>';
+
+            try {
+                const formData = new FormData();
+                formData.append('audio_file', fileInput.files[0]);
+
+                const response = await fetch('/voice/test', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    let audioHtml = '';
+                    if (data.audio_url) {
+                        audioHtml = `
+                            <p><strong>Response Audio:</strong></p>
+                            <audio controls>
+                                <source src="${data.audio_url}" type="audio/mpeg">
+                                Your browser does not support the audio element.
+                            </audio>
+                        `;
+                    }
+
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <p><strong>Transcription:</strong> ${data.transcription}</p>
+                            <p><strong>Response:</strong> ${data.response}</p>
+                            ${audioHtml}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function startConversation() {
+            const resultDiv = document.getElementById('conversationBox');
+            const messageInput = document.getElementById('messageText');
+            const sendTextBtn = document.getElementById('sendTextBtn');
+            const sendVoiceBtn = document.getElementById('sendVoiceBtn');
+            const customerNameInput = document.getElementById('customerName');
+            const phoneNumberInput = document.getElementById('phoneNumber');
+
+            console.log('Starting conversation...');
+
+            // Get customer information from input fields
+            const customerName = customerNameInput.value.trim();
+            const phoneNumber = phoneNumberInput.value.trim();
+
+            // Validate inputs
+            if (!customerName) {
+                alert('Please enter your name');
+                customerNameInput.focus();
+                return;
+            }
+
+            if (!phoneNumber) {
+                alert('Please enter your phone number');
+                phoneNumberInput.focus();
+                return;
+            }
+
+            console.log('Customer info:', { customerName, phoneNumber });
+
+            resultDiv.innerHTML = '<div class="result">Starting conversation...</div>';
+
+            // Disable all inputs initially
+            sendTextBtn.disabled = true;
+            sendVoiceBtn.disabled = true;
+            messageInput.disabled = true;
+
+            console.log('Inputs disabled:', {
+                messageInput: messageInput.disabled,
+                sendTextBtn: sendTextBtn.disabled,
+                sendVoiceBtn: sendVoiceBtn.disabled
+            });
+
+            try {
+                const response = await fetch('/start-call', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone_number: phoneNumber,
+                        customer_name: customerName
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentCallId = data.call_id;
+
+                    console.log('Call started successfully with ID:', currentCallId);
+                    console.log('Response data:', data);
+                    console.log('Audio URL:', data.audio_url);
+
+                    // Show active customer information
+                    document.getElementById('activeCustomerName').textContent = customerName;
+                    document.getElementById('activeCustomerPhone').textContent = phoneNumber;
+                    document.getElementById('customerInfoDisplay').style.display = 'block';
+
+                    // Initialize conversation history
+                    conversationHistory = [{
+                        role: 'agent',
+                        content: data.message,
+                        timestamp: new Date().toISOString()
+                    }];
+
+                    // Show initial agent message
+                    let audioHtml = '';
+                    if (data.audio_url) {
+                        audioHtml = `
+                            <audio controls>
+                                <source src="${data.audio_url}" type="audio/mpeg">
+                                Your browser does not support the audio element.
+                            </audio>
+                        `;
+                        console.log('Audio HTML generated:', audioHtml);
+                    } else {
+                        console.log('No audio URL received');
+                    }
+
+                    resultDiv.innerHTML = `
+                        <div class="message agent-message">
+                            <strong>🤖 Agent:</strong> ${data.message}
+                            ${audioHtml}
+                        </div>
+                        <div class="result success" style="margin-top: 10px;">
+                            <strong>✅ Conversation started! You can now send messages.</strong>
+                        </div>
+                    `;
+
+                    // Enable message inputs
+                    messageInput.disabled = false;
+                    sendTextBtn.disabled = false;
+                    sendVoiceBtn.disabled = false;
+
+                    console.log('Inputs enabled:', {
+                        messageInput: messageInput.disabled,
+                        sendTextBtn: sendTextBtn.disabled,
+                        sendVoiceBtn: sendVoiceBtn.disabled
+                    });
+
+                    console.log('Conversation started with call ID:', currentCallId);
+
+                    // After receiving agent response, play audio if audio_base64 is present
+                    if (data.audio_base64) {
+                        playBase64Audio(data.audio_base64);
+                    }
+
+                    if (data.should_end_call) {
+                        playBase64Audio(data.audio_base64);
+                        // Show call ended message and disable input
+                        document.getElementById('agent-message').innerText = data.reply + '\n(Call ended)';
+                        document.getElementById('send-btn').disabled = true;
+                        document.getElementById('user-input').disabled = true;
+                        return;
+                    }
+
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status} - Could not start call. Please try again.`;
+                    currentCallId = null;
+                    console.error('Failed to start call:', response.status);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}`;
+                currentCallId = null;
+                console.error('Error starting conversation:', error);
+            }
+        }
+
+        function forceEnableInputs() {
+            const messageInput = document.getElementById('messageText');
+            const sendTextBtn = document.getElementById('sendTextBtn');
+            const sendVoiceBtn = document.getElementById('sendVoiceBtn');
+
+            console.log('Forcing inputs to be enabled');
+
+            // Enable message inputs
+            messageInput.disabled = false;
+            sendTextBtn.disabled = false;
+            sendVoiceBtn.disabled = false;
+
+            console.log('Inputs enabled:', {
+                messageInput: messageInput.disabled,
+                sendTextBtn: sendTextBtn.disabled,
+                sendVoiceBtn: sendVoiceBtn.disabled
+            });
+        }
+
+        function checkCurrentState() {
+            const messageInput = document.getElementById('messageText');
+            const sendTextBtn = document.getElementById('sendTextBtn');
+            const sendVoiceBtn = document.getElementById('sendVoiceBtn');
+
+            console.log('Current state:', {
+                currentCallId: currentCallId,
+                messageInputDisabled: messageInput.disabled,
+                sendTextBtnDisabled: sendTextBtn.disabled,
+                sendVoiceBtnDisabled: sendVoiceBtn.disabled,
+                messageInputValue: messageInput.value
+            });
+
+            alert(`Current State:
+Call ID: ${currentCallId || 'None'}
+Message Input Disabled: ${messageInput.disabled}
+Send Text Button Disabled: ${sendTextBtn.disabled}
+Send Voice Button Disabled: ${sendVoiceBtn.disabled}
+Message Value: "${messageInput.value}"`);
+        }
+
+        async function sendTextMessage() {
+            const messageText = document.getElementById('messageText').value;
+            const resultDiv = document.getElementById('conversationBox');
+            const messageInput = document.getElementById('messageText');
+            const sendTextBtn = document.getElementById('sendTextBtn');
+            const sendVoiceBtn = document.getElementById('sendVoiceBtn');
+
+            console.log('Attempting to send message:', {
+                messageText: messageText,
+                currentCallId: currentCallId,
+                messageInputDisabled: messageInput.disabled,
+                sendTextBtnDisabled: sendTextBtn.disabled
+            });
+
+            // Check if we have the required data
+            if (!messageText) {
+                alert('Please enter a message to send');
+                return;
+            }
+
+            if (!currentCallId) {
+                alert('No active conversation. Please start a call first.');
+                return;
+            }
+
+            if (messageInput.disabled) {
+                alert('Message input is disabled. Click "Force Enable Inputs" to fix this.');
+                return;
+            }
+
+            if (sendTextBtn.disabled) {
+                alert('Send button is disabled. Click "Force Enable Inputs" to fix this.');
+                return;
+            }
+
+            // Disable send buttons while waiting
+            sendTextBtn.disabled = true;
+            sendVoiceBtn.disabled = true;
+            messageInput.disabled = true;
+
+            // Add customer message to local history
+            conversationHistory.push({
+                role: 'customer',
+                content: messageText,
+                timestamp: new Date().toISOString()
+            });
+
+            // Add customer message to conversation
+            const customerDiv = document.createElement('div');
+            customerDiv.className = 'message customer-message';
+            customerDiv.innerHTML = `<strong>👤 You:</strong> ${messageText}`;
+            resultDiv.appendChild(customerDiv);
+
+            // Add loading message
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message agent-message';
+            loadingDiv.innerHTML = '<em>🤖 Agent is typing...</em>';
+            resultDiv.appendChild(loadingDiv);
+
+            // Scroll to bottom
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+
+            try {
+                console.log('Sending message to backend...');
+                const response = await fetch(`/respond/${currentCallId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: messageText
+                    })
+                });
+
+                console.log('Response status:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Received response from backend:', data);
+                    console.log('Response audio URL:', data.audio_url);
+
+                    // Remove loading message
+                    resultDiv.removeChild(loadingDiv);
+
+                    // Add agent response to local history
+                    conversationHistory.push({
+                        role: 'agent',
+                        content: data.reply,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    let audioHtml = '';
+                    if (data.audio_url) {
+                        audioHtml = `
+                            <audio controls>
+                                <source src="${data.audio_url}" type="audio/mpeg">
+                                Your browser does not support the audio element.
+                            </audio>
+                        `;
+                        console.log('Response audio HTML generated:', audioHtml);
+                    } else {
+                        console.log('No response audio URL received');
+                    }
+
+                    const agentDiv = document.createElement('div');
+                    agentDiv.className = 'message agent-message';
+                    agentDiv.innerHTML = `
+                        <strong>🤖 Agent:</strong> ${data.reply}
+                        ${audioHtml}
+                    `;
+                    resultDiv.appendChild(agentDiv);
+
+                    // Clear input
+                    messageInput.value = '';
+
+                    console.log('Message sent successfully. Conversation history length:', conversationHistory.length);
+
+                    // After receiving agent response, play audio if audio_base64 is present
+                    if (data.audio_base64) {
+                        playBase64Audio(data.audio_base64);
+                    }
+
+                    if (data.should_end_call) {
+                        playBase64Audio(data.audio_base64);
+                        // Show call ended message and disable input
+                        document.getElementById('agent-message').innerText = data.reply + '\n(Call ended)';
+                        document.getElementById('send-btn').disabled = true;
+                        document.getElementById('user-input').disabled = true;
+                        return;
+                    }
+
+                } else {
+                    const errorText = await response.text();
+                    console.error('Failed to send message:', response.status, errorText);
+
+                    resultDiv.removeChild(loadingDiv);
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'result error';
+                    errorDiv.innerHTML = `❌ Error ${response.status}: ${errorText}`;
+                    resultDiv.appendChild(errorDiv);
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+
+                resultDiv.removeChild(loadingDiv);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'result error';
+                errorDiv.innerHTML = `❌ Network Error: ${error.message}`;
+                resultDiv.appendChild(errorDiv);
+            } finally {
+                // Re-enable send buttons
+                sendTextBtn.disabled = false;
+                sendVoiceBtn.disabled = false;
+                messageInput.disabled = false;
+                // Scroll to bottom
+                resultDiv.scrollTop = resultDiv.scrollHeight;
+
+                console.log('Inputs re-enabled:', {
+                    messageInput: messageInput.disabled,
+                    sendTextBtn: sendTextBtn.disabled,
+                    sendVoiceBtn: sendVoiceBtn.disabled
+                });
+            }
+        }
+
+        async function sendVoiceMessage() {
+            if (!currentCallId) {
+                alert('Please start a conversation first');
+                return;
+            }
+
+            if (!mediaRecorder) {
+                await initializeRecording();
+            }
+
+            // Start recording automatically
+            if (mediaRecorder.state === 'inactive') {
+                toggleRecording();
+            } else {
+                alert('Please stop the current recording first');
+            }
+        }
+
+        async function checkHealth() {
+            const resultDiv = document.getElementById('healthResult');
+
+            resultDiv.innerHTML = '<div class="result">Checking health...</div>';
+
+            try {
+                const response = await fetch('/health');
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <p><strong>Status:</strong> ${data.status}</p>
+                            <p><strong>Active Conversations:</strong> ${data.active_conversations}</p>
+                            <p><strong>Voice Capabilities:</strong></p>
+                            <ul>
+                                <li>TTS: ${data.voice_capabilities.tts}</li>
+                                <li>STT: ${data.voice_capabilities.stt}</li>
+                                <li>Formats: ${data.voice_capabilities.supported_formats.join(', ')}</li>
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Error: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize recording on page load
+        window.addEventListener('load', () => {
+            // Request microphone permission
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(() => {
+                    console.log('Microphone access granted');
+                })
+                .catch(() => {
+                    console.log('Microphone access denied');
+                });
+        });
+
+        function playBase64Audio(base64String) {
+            const audio = new Audio();
+            audio.src = 'data:audio/mp3;base64,' + base64String;
+            audio.play();
+        }
+    </script>
+</body>
+
+</html>
