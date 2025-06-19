@@ -32,8 +32,8 @@ An AI-powered voice sales agent that simulates automated sales calls for pitchin
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd voice_assistance
+git clone https://github.com/injamul3798/ai-voice-sales-agent
+cd ai-voice-sales-agent
 ```
 
 ### 2. Create and activate a virtual environment
