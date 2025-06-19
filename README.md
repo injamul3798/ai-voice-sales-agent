@@ -1,5 +1,14 @@
 # 🤖 AI Voice Sales Agent
 
+
+ 
+
+
+
+
+https://github.com/user-attachments/assets/0a06255a-7620-413d-b47c-03c895fccb1e
+
+
 A FastAPI-based voice sales agent for online course sales. Handles dynamic conversations, lead qualification, and objection handling using open-source AI models.
 
 ---
